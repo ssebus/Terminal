@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="page-title">Realistyczny Terminal POS Euro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 12px;
+        }
+        
+        .pos-system {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Przełącznik języków PL / DE */
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-bottom: -2px;
+        }
+        .lang-btn {
+            background: #1e2230;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* Asystent */
+        .assistant-box {
+            display: flex;
+            align-items: center;
+            background: #1e2230;
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .avatar {
+            font-size: 2rem;
+        }
+        .speech-bubble {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            color: #38bdf8;
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        /* Terminal */
+        .terminal-card {
+            background: #1e2230;
+            padding: 16px;
+            border-radius: 22px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+        h2 {
+            margin: 0 0 6px 0;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+        }
+        .screen {
+            background: #090d16;
+            border: 2px solid #273043;
+            border-radius: 14px;
+            padding: 12px;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #22c55e;
+            text-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+            min-height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 11px;
+            font-size: 1.1rem;
+            border-radius: 11px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+        .btn:active {
+            background: #475569;
+            transform: scale(0.93);
+        }
+        .btn-pay-row {
+            display: flex;
+            gap: 7px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 11px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn-pay {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        .btn-cash {
+            background: linear-gradient(135deg, #10b981, #047857);
+        }
+
+        .btn-drawer-toggle {
+            background: #334155;
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            padding: 10px;
+            font-size: 0.85rem;
+            border-radius: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Szuflada z gotówką */
+        .cash-drawer {
+            background: #0f172a;
+            border: 2px dashed #475569;
+            border-radius: 18px;
+            padding: 0 12px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+        .cash-drawer.open {
+            max-height: 420px;
+            padding: 10px;
+            border-color: #3b82f6;
+            overflow-y: auto;
+        }
+        .drawer-title {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .manual-cash-box {
+            background: #161e2e;
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .manual-cash-input {
+            background: #090d16;
+            border: 1px solid #334155;
+            color: #22c55e;
+            font-size: 0.9rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: bold;
+            outline: none;
+        }
+        .manual-cash-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .money-tray {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        .money-item {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 9px;
+            padding: 6px 2px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            font-weight: bold;
+        }
+        .money-item:active {
+            transform: scale(0.9);
+            background: #2563eb;
+        }
+        .wallet-section {
+            background: #161e2e;
+            border-radius: 10px;
+            padding: 6px;
+            text-align: center;
+            margin-top: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .wallet-title {
+            font-size: 0.6rem;
+            color: #64748b;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .wallet-money-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            min-height: 24px;
+            align-items: center;
+        }
+        .cash-badge {
+            background: #1e293b;
+            border: 1px solid #475569;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Modal Zbliżeniowy */
+        #nfc-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(10px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .nfc-card-box {
+            background: #1e2230;
+            padding: 25px;
+            border-radius: 26px;
+            width: 100%;
+            max-width: 310px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .yellow-nfc-target {
+            width: 100px;
+            height: 100px;
+            border: 5px solid #eab308;
+            border-radius: 20px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(234, 179, 8, 0.1);
+            box-shadow: 0 0 25px rgba(234, 179, 8, 0.5);
+            animation: yellow-pulse 1.2s infinite alternate;
+        }
+        @keyframes yellow-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 10px rgba(234, 179, 8, 0.4); border-color: #eab308; }
+            100% { transform: scale(1.05); box-shadow: 0 0 25px rgba(234, 179, 8, 0.8); border-color: #facc15; }
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto 15px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success-checkmark {
+            display: none;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px auto;
+            border-radius: 50%;
+            background: #22c55e;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            animation: bounce-check 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .error-cross {
+            display: none;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px auto;
+            border-radius: 50%;
+            background: #ef4444;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        .error-title {
+            display: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ef4444;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .error-subtext {
+            display: none;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+        }
+        @keyframes bounce-check {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .cancel-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            margin-top: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        /* Modal Reszty */
+        #change-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(10px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .change-box {
+            background: #1e2230;
+            padding: 24px;
+            border-radius: 26px;
+            width: 100%;
+            max-width: 310px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <video id="webcam" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div class="pos-system">
+        
+        <!-- Przełącznik Języków -->
+        <div class="lang-switcher">
+            <button class="lang-btn active" id="btn-pl" onclick="setLanguage('pl')">PL</button>
+            <button class="lang-btn" id="btn-de" onclick="setLanguage('de')">DE</button>
+        </div>
+
+        <!-- Asystent -->
+        <div class="assistant-box">
+            <div class="avatar" id="assistantEmoji">🤖</div>
+            <div class="speech-bubble" id="assistantSpeech">Wpisz kwotę w Euro (€).</div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal-card">
+            <h2 id="terminal-title">TERMINAL POS EURO</h2>
+            <div class="screen" id="amount-screen">0,00 €</div>
+            
+            <div class="keypad">
+                <button class="btn" onclick="press('1')">1</button>
+                <button class="btn" onclick="press('2')">2</button>
+                <button class="btn" onclick="press('3')">3</button>
+                <button class="btn" onclick="press('4')">4</button>
+                <button class="btn" onclick="press('5')">5</button>
+                <button class="btn" onclick="press('6')">6</button>
+                <button class="btn" onclick="press('7')">7</button>
+                <button class="btn" onclick="press('8')">8</button>
+                <button class="btn" onclick="press('9')">9</button>
+                <button class="btn" onclick="clearAmount()">C</button>
+                <button class="btn" onclick="press('0')">0</button>
+                <button class="btn" onclick="backspace()">⌫</button>
+            </div>
+
+            <div class="btn-pay-row">
+                <button class="btn-action btn-pay" id="btn-nfc-text" onclick="startNfcPayment()">📶 Zbliżeniowo</button>
+                <button class="btn-action btn-cash" id="btn-cash-text" onclick="startCashPayment()">💵 Gotówka</button>
+            </div>
+        </div>
+
+        <!-- Przycisk szuflady -->
+        <button class="btn-drawer-toggle" id="btn-drawer-text" onclick="toggleDrawer()">🗄️ Otwórz szufladę na gotówkę</button>
+
+        <!-- Szuflada z gotówką -->
+        <div class="cash-drawer" id="cashDrawer">
+            <div class="manual-cash-box">
+                <input type="number" id="manual-cash-input" class="manual-cash-input" placeholder="Wpisz kwotę np. 35" step="0.01">
+                <button class="manual-cash-btn" id="manual-cash-btn" onclick="addManualCash()">Dodaj</button>
+            </div>
+
+            <div class="drawer-title" id="drawer-title-text">Wszystkie banknoty i monety Euro:</div>
+            <div class="money-tray">
+                <div class="money-item" onclick="addMoney(5, '5 €', '💵')">💵 5 €</div>
+                <div class="money-item" onclick="addMoney(10, '10 €', '💵')">💵 10 €</div>
+                <div class="money-item" onclick="addMoney(20, '20 €', '💵')">💵 20 €</div>
+                <div class="money-item" onclick="addMoney(50, '50 €', '💶')">💶 50 €</div>
+                <div class="money-item" onclick="addMoney(100, '100 €', '💶')">💶 100 €</div>
+                <div class="money-item" onclick="addMoney(200, '200 €', '💶')">💶 200 €</div>
+                <div class="money-item" onclick="addMoney(500, '500 €', '💶')">💶 500 €</div>
+                <div class="money-item" onclick="addMoney(2, '2 €', '🪙')">🪙 2 €</div>
+                <div class="money-item" onclick="addMoney(1, '1 €', '🪙')">🪙 1 €</div>
+                <div class="money-item" onclick="addMoney(0.50, '50 ct', '🪙')">🪙 50 ct</div>
+                <div class="money-item" onclick="addMoney(0.20, '20 ct', '🪙')">🪙 20 ct</div>
+                <div class="money-item" onclick="addMoney(0.10, '10 ct', '🪙')">🪙 10 ct</div>
+                <div class="money-item" onclick="addMoney(0.05, '5 ct', '🪙')">🪙 5 ct</div>
+                <div class="money-item" onclick="addMoney(0.02, '2 ct', '🪙')">🪙 2 ct</div>
+                <div class="money-item" onclick="addMoney(0.01, '1 ct', '🪙')">🪙 1 ct</div>
+            </div>
+
+            <div class="wallet-section">
+                <div class="wallet-title" id="wallet-title-text">Wrzucone do kasy (kliknij, aby wyjąć):</div>
+                <div class="wallet-money-box" id="drawerContents">
+                    <span style="color: #475569; font-size: 0.65rem;" id="drawer-empty-text">Szuflada jest pusta</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Zbliżeniowy -->
+    <div id="nfc-modal">
+        <div class="nfc-card-box">
+            <div class="yellow-nfc-target" id="yellow-circle">
+                <!-- Usunięto ikonę ze środka, ramka jest żółta i pulsująca -->
+            </div>
+            <div class="spinner" id="nfc-spinner"></div>
+            <div class="success-checkmark" id="success-check">✓</div>
+            <div class="error-cross" id="error-cross">✕</div>
+            <div class="error-title" id="error-title">ERROR</div>
+            <div class="error-subtext" id="error-subtext">Spróbuj ponownie</div>
+            
+            <h3 id="nfc-status" style="margin-top: 0; color: #f1f5f9;">Zbliż kartę do przedniej kamery u góry...</h3>
+            <p id="amount-display-modal" style="color: #22c55e; font-size: 1.3rem; font-weight: bold; margin: 6px 0 10px 0;"></p>
+            <button class="cancel-btn" id="nfc-cancel-btn" onclick="closeModals()">Anuluj</button>
+        </div>
+    </div>
+
+    <!-- Modal Reszty -->
+    <div id="change-modal">
+        <div class="change-box">
+            <div style="font-size: 2.2rem; margin-bottom: 4px;">🪙💶</div>
+            <h3 style="margin-top: 0; color: #f1f5f9;" id="change-box-title">Kalkulator Reszty</h3>
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 2px 0;"><span id="change-due-label">Do zapłaty:</span> <b id="change-due" style="color: #fff;">0,00 €</b></p>
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 2px 0;"><span id="change-given-label">Klient dał:</span> <b id="change-given" style="color: #fff;">0,00 €</b></p>
+            <div style="background: #090d16; border: 2px solid #22c55e; border-radius: 12px; padding: 10px; margin: 10px 0; font-size: 1.5rem; color: #22c55e; font-weight: bold;" id="change-amount">
+                RESZTA: 0,00 €
+            </div>
+            <button class="btn-action btn-cash" style="width: 100%; padding: 11px;" id="btn-finish-cash" onclick="finishCashTransaction()">✅ Wydano resztę (Gotowe)</button>
+            <button class="cancel-btn" id="btn-close-modal" onclick="closeModals()" style="margin-top: 6px;">Zamknij</button>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = "0";
+        let drawerOpen = false;
+        let drawerMoney = [];
+        let videoStream = null;
+        let detectionInterval = null;
+        let paymentTimeout = null;
+        let isScanning = false;
+        let previousFrameData = null;
+        let currentLang = "pl";
+
+        const translations = {
+            pl: {
+                pageTitle: "Realistyczny Terminal POS Euro",
+                terminalTitle: "TERMINAL POS EURO",
+                btnNfc: "📶 Zbliżeniowo",
+                btnCash: "💵 Gotówka",
+                btnDrawer: "🗄️ Otwórz szufladę na gotówkę",
+                drawerTitle: "Wszystkie banknoty i monety Euro:",
+                walletTitle: "Wrzucone do kasy (kliknij, aby wyjąć):",
+                drawerEmpty: "Szuflada jest pusta",
+                manualPlaceholder: "Wpisz kwotę np. 35",
+                manualAddBtn: "Dodaj",
+                nfcStatusInitial: "Zbliż kartę do przedniej kamery u góry...",
+                nfcStatusProcessing: "Przetwarzanie płatności...",
+                nfcStatusSuccess: "ZAPŁACONE!",
+                errorSubtext: "Spróbuj ponownie",
+                cancelBtn: "Anuluj",
+                changeTitle: "Kalkulator Reszty",
+                dueLabel: "Do zapłaty:",
+                givenLabel: "Klient dał:",
+                changeText: "RESZTA:",
+                missingText: "BRAKUJE:",
+                finishCashBtn: "✅ Wydano resztę (Gotowe)",
+                closeBtn: "Zamknij",
+                assistantDefault: "Wpisz kwotę w Euro (€).",
+                assistantCardPrompt: (amt) => `Kwota: ${amt}. Kliknij Zbliżeniowo!`,
+                assistantReadyNfc: "Oczekiwanie na zbliżenie karty do przedniej kamery...",
+                assistantSuccessNfc: "Transakcja pomyślna!",
+                assistantGiveChange: (change) => `Wydaj klientowi ${change} € reszty!`,
+                assistantNeedMore: "Włóż więcej pieniędzy do szuflady!",
+                assistantCashDone: "Gotówka rozliczona! Transakcja zamknięta."
+            },
+            de: {
+                pageTitle: "Realistisches Euro POS-Terminal",
+                terminalTitle: "EURO POS TERMINAL",
+                btnNfc: "📶 Kontaktlos",
+                btnCash: "💵 Bargeld",
+                btnDrawer: "🗄️ Kauschublade öffnen",
+                drawerTitle: "Alle Euro-Banknoten und Münzen:",
+                walletTitle: "Eingelegt (zum Entfernen anklicken):",
+                drawerEmpty: "Kauschublade ist leer",
+                manualPlaceholder: "Betrag eingeben z.B. 35",
+                manualAddBtn: "Hinzufügen",
+                nfcStatusInitial: "Karte an die Vorderkamera oben halten...",
+                nfcStatusProcessing: "Zahlung wird verarbeitet...",
+                nfcStatusSuccess: "BEZAHLT!",
+                errorSubtext: "Bitte erneut versuchen",
+                cancelBtn: "Abbrechen",
+                changeTitle: "Wechselgeldrechner",
+                dueLabel: "Zu zahlen:",
+                givenLabel: "Gegeben:",
+                changeText: "WECHSELGELD:",
+                missingText: "FEHLT:",
+                finishCashBtn: "✅ Wechselgeld ausgegeben (Fertig)",
+                closeBtn: "Schließen",
+                assistantDefault: "Geben Sie den Betrag in Euro (€) ein.",
+                assistantCardPrompt: (amt) => `Betrag: ${amt}. Klicken Sie auf Kontaktlos!`,
+                assistantReadyNfc: "Warte auf Annäherung der Karte an die Vorderkamera...",
+                assistantSuccessNfc: "Transaktion erfolgreich!",
+                assistantGiveChange: (change) => `Geben Sie dem Kunden ${change} € Wechselgeld!`,
+                assistantNeedMore: "Legen Sie mehr Geld in die Schublade!",
+                assistantCashDone: "Bargeld abgerechnet! Transaktion geschlossen."
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById("btn-pl").classList.toggle("active", lang === "pl");
+            document.getElementById("btn-de").classList.toggle("active", lang === "de");
+
+            const t = translations[lang];
+            document.getElementById("page-title").innerText = t.pageTitle;
+            document.getElementById("terminal-title").innerText = t.terminalTitle;
+            document.getElementById("btn-nfc-text").innerText = t.btnNfc;
+            document.getElementById("btn-cash-text").innerText = t.btnCash;
+            document.getElementById("btn-drawer-text").innerText = t.btnDrawer;
+            document.getElementById("drawer-title-text").innerText = t.drawerTitle;
+            document.getElementById("wallet-title-text").innerText = t.walletTitle;
+            document.getElementById("drawer-empty-text").innerText = t.drawerEmpty;
+            document.getElementById("manual-cash-input").placeholder = t.manualPlaceholder;
+            document.getElementById("manual-cash-btn").innerText = t.manualAddBtn;
+            document.getElementById("error-subtext").innerText = t.errorSubtext;
+            document.getElementById("nfc-cancel-btn").innerText = t.cancelBtn;
+            document.getElementById("change-box-title").innerText = t.changeTitle;
+            document.getElementById("change-due-label").innerText = t.dueLabel;
+            document.getElementById("change-given-label").innerText = t.givenLabel;
+            document.getElementById("btn-finish-cash").innerText = t.finishCashBtn;
+            document.getElementById("btn-close-modal").innerText = t.closeBtn;
+
+            updateScreen();
+        }
+
+        function playDoubleBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(950, audioCtx.currentTime);
+                gain1.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.1);
+
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.15);
+                }, 120);
+            } catch (e) {
+                console.log("Audio error");
+            }
+        }
+
+        function updateScreen() {
+            let num = parseInt(currentInput) || 0;
+            let formatted = (num / 100).toFixed(2).replace(".", ",") + " €";
+            document.getElementById("amount-screen").innerText = formatted;
+            
+            let assistant = document.getElementById("assistantSpeech");
+            const t = translations[currentLang];
+            if (num > 0) {
+                assistant.innerText = t.assistantCardPrompt(formatted);
+                document.getElementById("assistantEmoji").innerText = "💳";
+            } else {
+                assistant.innerText = t.assistantDefault;
+                document.getElementById("assistantEmoji").innerText = "🤖";
+            }
+        }
+
+        function press(val) {
+            if (currentInput.length >= 7) return;
+            if (currentInput === "0") {
+                currentInput = val;
+            } else {
+                currentInput += val;
+            }
+            updateScreen();
+        }
+
+        function clearAmount() {
+            currentInput = "0";
+            updateScreen();
+        }
+
+        function backspace() {
+            if (currentInput.length <= 1) {
+                currentInput = "0";
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateScreen();
+        }
+
+        function toggleDrawer() {
+            drawerOpen = !drawerOpen;
+            let drawer = document.getElementById("cashDrawer");
+            if (drawerOpen) {
+                drawer.classList.add("open");
+            } else {
+                drawer.classList.remove("open");
+            }
+        }
+
+        function addMoney(val, name, icon) {
+            drawerMoney.push({ val, name, icon });
+            renderDrawerContents();
+        }
+
+        function addManualCash() {
+            let inputEl = document.getElementById("manual-cash-input");
+            let val = parseFloat(inputEl.value.replace(",", "."));
+            if (isNaN(val) || val <= 0) {
+                alert(currentLang === "pl" ? "Wpisz poprawną kwotę!" : "Bitte geben Sie einen gültigen Betrag ein!");
+                return;
+            }
+            drawerMoney.push({ val, name: val.toFixed(2).replace(".", ",") + " €", icon: '💵' });
+            inputEl.value = "";
+            renderDrawerContents();
+        }
+
+        function removeMoney(index) {
+            drawerMoney.splice(index, 1);
+            renderDrawerContents();
+        }
+
+        function renderDrawerContents() {
+            let box = document.getElementById("drawerContents");
+            const t = translations[currentLang];
+            if (drawerMoney.length === 0) {
+                box.innerHTML = `<span style="color: #475569; font-size: 0.65rem;">${t.drawerEmpty}</span>`;
+                return;
+            }
+            box.innerHTML = "";
+            drawerMoney.forEach((item, index) => {
+                let badge = document.createElement("div");
+                badge.className = "cash-badge";
+                badge.innerHTML = `<span>${item.icon}</span> ${item.name} ✕`;
+                badge.onclick = () => removeMoney(index);
+                box.appendChild(badge);
+            });
+        }
+
+        async function startNfcPayment() {
+            let num = parseInt(currentInput) || 0;
+            if (num === 0) {
+                alert(currentLang === "pl" ? "Najpierw wpisz kwotę większą niż 0!" : "Bitte zuerst einen Betrag größer als 0 eingeben!");
+                return;
+            }
+
+            let formatted = document.getElementById("amount-screen").innerText;
+            document.getElementById("amount-display-modal").innerText = formatted;
+            
+            const t = translations[currentLang];
+            document.getElementById("nfc-modal").style.display = "flex";
+            document.getElementById("yellow-circle").style.display = "flex";
+            document.getElementById("nfc-spinner").style.display = "none";
+            document.getElementById("success-check").style.display = "none";
+            document.getElementById("error-cross").style.display = "none";
+            document.getElementById("error-title").style.display = "none";
+            document.getElementById("error-subtext").style.display = "none";
+            document.getElementById("nfc-cancel-btn").style.display = "block";
+            document.getElementById("nfc-status").innerText = t.nfcStatusInitial;
+            
+            document.getElementById("assistantSpeech").innerText = t.assistantReadyNfc;
+            document.getElementById("assistantEmoji").innerText = "📡";
+
+            isScanning = true;
+            previousFrameData = null;
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const video = document.getElementById("webcam");
+                video.srcObject = videoStream;
+                video.play();
+                startCameraDetection();
+            } catch (err) {
+                console.log("Przednia kamera niedostępna: " + err);
+            }
+        }
+
+        function startCameraDetection() {
+            const video = document.getElementById("webcam");
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+
+            detectionInterval = setInterval(() => {
+                if (!isScanning) return;
+
+                canvas.width = 64;
+                canvas.height = 64;
+                ctx.drawImage(video, 0, 0, 64, 64);
+                const frame = ctx.getImageData(0, 0, 64, 64);
+                const data = frame.data;
+
+                let colorSum = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    colorSum += (data[i] + data[i+1] + data[i+2]) / 3;
+                }
+                let avgBrightness = colorSum / (data.length / 4);
+
+                if (previousFrameData && !paymentTimeout) {
+                    let diffSum = 0;
+                    for (let i = 0; i < data.length; i += 16) {
+                        diffSum += Math.abs(data[i] - previousFrameData[i]);
+                    }
+                    let avgDiff = diffSum / (data.length / 16);
+
+                    if (avgBrightness < 35 && avgDiff > 12) {
+                        triggerPaymentProcess();
+                    }
+                }
+
+                previousFrameData = new Uint8ClampedArray(data);
+            }, 150);
+        }
+
+        function triggerPaymentProcess() {
+            if (paymentTimeout) return;
+
+            const t = translations[currentLang];
+            document.getElementById("yellow-circle").style.display = "none";
+            document.getElementById("nfc-spinner").style.display = "block";
+            document.getElementById("nfc-status").innerText = t.nfcStatusProcessing;
+            
+            paymentTimeout = setTimeout(() => {
+                const canvas = document.getElementById("canvas");
+                const ctx = canvas.getContext("2d");
+                const video = document.getElementById("webcam");
+                ctx.drawImage(video, 0, 0, 64, 64);
+                const frame = ctx.getImageData(0, 0, 64, 64);
+                const data = frame.data;
+                let colorSum = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    colorSum += (data[i] + data[i+1] + data[i+2]) / 3;
+                }
+                let currentBrightness = colorSum / (data.length / 4);
+
+                if (currentBrightness > 65) {
+                    paymentTimeout = null;
+                    triggerTransactionError();
+                } else {
+                    paymentTimeout = null;
+                    finishSuccessfulPayment();
+                }
+            }, 2000);
+        }
+
+        function triggerTransactionError() {
+            document.getElementById("nfc-spinner").style.display = "none";
+            document.getElementById("error-cross").style.display = "flex";
+            document.getElementById("error-title").style.display = "block";
+            document.getElementById("error-subtext").style.display = "block";
+            document.getElementById("nfc-status").innerText = "";
+            playErrorBeep();
+
+            setTimeout(() => {
+                closeModals();
+            }, 2500);
+        }
+
+        function playErrorBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        function finishSuccessfulPayment() {
+            if (detectionInterval) clearInterval(detectionInterval);
+            if (paymentTimeout) clearTimeout(paymentTimeout);
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+
+            const t = translations[currentLang];
+            playDoubleBeep();
+            document.getElementById("nfc-spinner").style.display = "none";
+            document.getElementById("success-check").style.display = "flex";
+            document.getElementById("nfc-status").innerText = t.nfcStatusSuccess;
+            document.getElementById("nfc-cancel-btn").style.display = "none";
+            
+            document.getElementById("assistantSpeech").innerText = t.assistantSuccessNfc;
+            document.getElementById("assistantEmoji").innerText = "🎉";
+
+            setTimeout(() => {
+                closeModals();
+                clearAmount();
+            }, 2000);
+        }
+
+        function startCashPayment() {
+            let num = parseInt(currentInput) || 0;
+            if (num === 0) {
+                alert(currentLang === "pl" ? "Najpierw wpisz kwotę większą niż 0!" : "Bitte zuerst einen Betrag größer als 0 eingeben!");
+                return;
+            }
+
+            toggleDrawer();
+
+            let dueAmount = num / 100;
+            let givenAmount = drawerMoney.reduce((sum, item) => sum + item.val, 0);
+            let change = givenAmount - dueAmount;
+
+            document.getElementById("change-due").innerText = dueAmount.toFixed(2).replace(".", ",") + " €";
+            document.getElementById("change-given").innerText = givenAmount.toFixed(2).replace(".", ",") + " €";
+            
+            const t = translations[currentLang];
+            let changeEl = document.getElementById("change-amount");
+            if (change >= 0) {
+                playDoubleBeep();
+                changeEl.innerText = `${t.changeText} ` + change.toFixed(2).replace(".", ",") + " €";
+                changeEl.style.color = "#22c55e";
+                document.getElementById("assistantSpeech").innerText = t.assistantGiveChange(change.toFixed(2));
+                document.getElementById("assistantEmoji").innerText = "💶";
+            } else {
+                let missing = Math.abs(change);
+                changeEl.innerText = `${t.missingText} ` + missing.toFixed(2).replace(".", ",") + " €";
+                changeEl.style.color = "#ef4444";
+                document.getElementById("assistantSpeech").innerText = t.assistantNeedMore;
+                document.getElementById("assistantEmoji").innerText = "⚠️";
+            }
+
+            document.getElementById("change-modal").style.display = "flex";
+        }
+
+        function finishCashTransaction() {
+            const t = translations[currentLang];
+            playDoubleBeep();
+            document.getElementById("assistantSpeech").innerText = t.assistantCashDone;
+            document.getElementById("assistantEmoji").innerText = "🪙";
+            closeModals();
+            clearAmount();
+            drawerMoney = [];
+            renderDrawerContents();
+        }
+
+        function closeModals() {
+            isScanning = false;
+            if (detectionInterval) clearInterval(detectionInterval);
+            if (paymentTimeout) {
+                clearTimeout(paymentTimeout);
+                paymentTimeout = null;
+            }
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+
+            document.getElementById("nfc-modal").style.display = "none";
+            document.getElementById("change-modal").style.display = "none";
+            document.getElementById("success-check").style.display = "none";
+            document.getElementById("error-cross").style.display = "none";
+            document.getElementById("error-title").style.display = "none";
+            document.getElementById("error-subtext").style.display = "none";
+            document.getElementById("nfc-spinner").style.display = "none";
+            document.getElementById("yellow-circle").style.display = "flex";
+            updateScreen();
+        }
+    </script>
+</body>
+</html>
